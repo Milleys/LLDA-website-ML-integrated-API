@@ -1,0 +1,37 @@
+.massive-prescription {
+    margin: 0;
+}
+.massive-container {
+    width: 395px;
+    position: absolute;
+    margin: 0 !important;
+    top: 66px;
+    left: calc(50% - 197px);
+    line-height: 150%;
+    font-weight: 500;
+    display: inline-block;
+    z-index: 0;
+    background-color: #fff;
+    border: 2px solid var(--color-black);
+}
+.massive {
+    width: 652px;
+    position: relative;
+    background-color: #fff;
+    border: 2px solid black;
+    box-sizing: border-box;
+    height: 207px;
+    overflow: hidden;
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: flex-start;
+    justify-content: flex-start;
+    max-width: 90%;
+    max-height: 90%;
+    text-align: center;
+    font-size: 20px;
+    color: var(--color-black);
+    font-family: var(--font-inter);
+}
+
