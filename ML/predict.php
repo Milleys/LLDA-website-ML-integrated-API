@@ -1,10 +1,9 @@
-<!-- C:\xampp\htdocs\my_website\predict.php -->
 <?php
 session_start();
 $_SESSION["date"];
 print_r($_SESSION);
 
-#weather API
+# Weather API
 $latitude = "14.5243"; // Latitude for Taguig
 $longitude = "121.0792"; // Longitude for Taguig
 $timezone = "Asia/Singapore"; // Timezone for Taguig
@@ -34,14 +33,16 @@ if (isset($weatherArray['daily'])) {
     $weatherCode = $dailyData['weather_code'];
 
     // Default to show tomorrow's data
-    $selectedDate = date('Y-m-d'); // Default: Tomorrow
-    $_SESSION["date"] = $selectedDate;
+
+
     // Check if a date is provided via GET request
     if (isset($_GET['date']) && in_array($_GET['date'], $dates)) {
         $selectedDate = $_GET['date'];
         $_SESSION["date"] = $selectedDate;
-
     }
+
+    // Ensure the correct date is being used
+    echo "<p>Selected Date: {$selectedDate}</p>";
 
     // Find index for the selected date
     $index = array_search($selectedDate, $dates);
@@ -68,20 +69,14 @@ if (isset($weatherArray['daily'])) {
     echo "Unable to fetch weather data.";
 }
 
-
-
-
-
-
-#Flask API
+# Flask API
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     $data = [
-        'Temperature' => [floatval($temperatureMax)],
-        'Humidity' => [floatval($humidityMax)],
-        'Wind Speed' => [floatval($windSpeedMax)],
+        'Temperature' => [floatval($temperatureMax[$index])],
+        'Humidity' => [floatval($humidityMax[$index])],
+        'Wind Speed' => [floatval($windSpeedMax[$index])],
         'Date' =>  $_SESSION["date"],
     ];
-
 
     $json_data = json_encode($data);
 
@@ -98,22 +93,20 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     // Decode the JSON response from the Flask API
     $response = json_decode($result, true);
 
-
-    if ($response['status'] == 'Error') {
+    if (isset($response['status']) && $response['status'] == 'Error') {
         $error_message = $response['message'];
     } else {
-    $prediction = $response['prediction'][0] ?? null;
-    $status = $response['status'] ?? 'No status available';
-    $forecast = $response['forecast'] ?? [];
+        $prediction = $response['prediction'][0] ?? null;
+        $status = $response['status'] ?? 'No status available';
+        $forecast = $response['forecast'] ?? [];
 
-     // Convert forecast to a string for display
-     $forecastString = '';
-     foreach ($forecast as $key => $value) {
-         $forecastString .= "<p><strong>{$key}:</strong> {$value}</p>";
-     }
+        // Convert forecast to a string for display
+        $forecastString = '';
+        foreach ($forecast as $key => $value) {
+            $forecastString .= "<p><strong>{$key}:</strong> {$value}</p>";
+        }
     }
 }
-
 ?>
 
 <!DOCTYPE html>
@@ -135,15 +128,13 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 
     <h2>Enter New Data for Prediction</h2>
     <form action="predict.php" method="post">
-    
         <input type="submit" value="Predict">
     </form>
-
 
     <h2>Select a Date for Weather Forecast</h2>
     <form method="get" action="">
         <label for="date">Choose Date:</label>
-        <input type="date" id="date" name="date" min="<?php echo min($dates); ?>" max="<?php echo max($dates); ?>" value="<?php echo date('Y-m-d', strtotime('+1 day')); ?>">
+        <input type="date" id="date" name="date" min="<?php echo min($dates); ?>" max="<?php echo max($dates); ?>" value="<?php echo isset($_GET['date']) ? $_GET['date'] : date('Y-m-d', strtotime('+1 day')); ?>">
         <input type="submit" value="Show Weather">
     </form>
 </body>
