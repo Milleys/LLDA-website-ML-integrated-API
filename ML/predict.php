@@ -1,7 +1,6 @@
 <?php
 session_start();
-$_SESSION["date"];
-print_r($_SESSION);
+$_SESSION["date"] = isset($_SESSION["date"]) ? $_SESSION["date"] : date('Y-m-d'); // Ensure session date is initialized
 
 # Weather API
 $latitude = "14.5243"; // Latitude for Taguig
@@ -33,12 +32,11 @@ if (isset($weatherArray['daily'])) {
     $weatherCode = $dailyData['weather_code'];
 
     // Default to show tomorrow's data
-
-
-    // Check if a date is provided via GET request
     if (isset($_GET['date']) && in_array($_GET['date'], $dates)) {
         $selectedDate = $_GET['date'];
         $_SESSION["date"] = $selectedDate;
+    } else {
+        $selectedDate = $_SESSION["date"];
     }
 
     // Ensure the correct date is being used
@@ -69,13 +67,15 @@ if (isset($weatherArray['daily'])) {
     echo "Unable to fetch weather data.";
 }
 
-# Flask API
+// Handle Flask API request and response
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
+    $results = [];
+
     $data = [
         'Temperature' => [floatval($temperatureMax[$index])],
         'Humidity' => [floatval($humidityMax[$index])],
         'Wind Speed' => [floatval($windSpeedMax[$index])],
-        'Date' =>  $_SESSION["date"],
+        'Date' => $_SESSION["date"],
     ];
 
     $json_data = json_encode($data);
@@ -95,16 +95,10 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 
     if (isset($response['status']) && $response['status'] == 'Error') {
         $error_message = $response['message'];
+        $results['error_message'] = $error_message;
     } else {
-        $prediction = $response['prediction'][0] ?? null;
-        $status = $response['status'] ?? 'No status available';
-        $forecast = $response['forecast'] ?? [];
-
-        // Convert forecast to a string for display
-        $forecastString = '';
-        foreach ($forecast as $key => $value) {
-            $forecastString .= "<p><strong>{$key}:</strong> {$value}</p>";
-        }
+        $results['status'] = $response['status'];
+        $results['predictions'] = $response['results'];
     }
 }
 ?>
@@ -115,19 +109,28 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     <title>Phytoplankton Prediction</title>
 </head>
 <body>
-    <h2>Phytoplankton Prediction Result</h2>
-    <?php if (isset($error_message)): ?>
-        <p style="color: red;"><strong>Error:</strong> <?php echo $error_message; ?></p>
-    <?php elseif (isset($prediction)): ?>
-        <p><strong>Predicted Phytoplankton Count (cells/ml):</strong> <?php echo $prediction; ?></p>
-        <p><strong>Status:</strong> <?php echo $status; ?></p>
-        <div><strong>Forecast:</strong><?php echo $forecastString; ?></div>
+    <h2>Phytoplankton Prediction Results</h2>
+    <?php if (isset($results)): ?>
+        <?php if (isset($results['error_message'])): ?>
+            <p style="color: red;"><strong>Error:</strong> <?php echo $results['error_message']; ?></p>
+        <?php else: ?>
+            <?php foreach ($results['predictions'] as $station_name => $result): ?>
+                <h3>Results for <?php echo $station_name; ?></h3>
+                <p><strong>Predicted Phytoplankton Count (cells/ml):</strong> <?php echo $result['prediction'][0]; ?></p>
+                <p><strong>Status:</strong> <?php echo $results['status']; ?></p>
+                <div><strong>Forecast:</strong>
+                    <?php foreach ($result['forecast'] as $key => $value): ?>
+                        <p><strong><?php echo $key; ?>:</strong> <?php echo $value; ?></p>
+                    <?php endforeach; ?>
+                </div>
+            <?php endforeach; ?>
+        <?php endif; ?>
     <?php else: ?>
         <p>No prediction made yet. Please submit the form.</p>
     <?php endif; ?>
 
     <h2>Enter New Data for Prediction</h2>
-    <form action="predict.php" method="post">
+    <form action="" method="post">
         <input type="submit" value="Predict">
     </form>
 
