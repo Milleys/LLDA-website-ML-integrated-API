@@ -101,6 +101,36 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         $results['predictions'] = $response['results'];
     }
 }
+
+$phyto = [];
+
+if (isset($results)) {
+    if (isset($results['error_message'])) {
+        echo "Error: " . $results['error_message'] . "\n";
+    } else {
+        foreach ($results['predictions'] as $station_name => $result) {
+            #echo "Results for " . $station_name . "\n";
+            #echo "Predicted Phytoplankton Count (cells/ml): " . $result['prediction'][0] . "\n";
+            $phyto[$station_name] = $result['prediction'][0]; // Store predictions by station name
+            #echo "Forecast:\n";
+            foreach ($result['forecast'] as $key => $value) {
+                #echo $key . ": " . $value . "\n";
+            }
+        }
+    }
+} else {
+    echo "No prediction made yet. Please submit the form.";
+}
+
+// Output the prediction for a specific station if it exists
+$station_to_display = 'Stn V (Northern West Bay)'; // Replace 'Station Name' with the actual station name you want to display
+if (isset($phyto[$station_to_display])) {
+    echo "Prediction for " . $station_to_display . ": " . $phyto[$station_to_display] . "\n";
+} else {
+    echo "No prediction available for " . $station_to_display . "\n";
+}
+
+
 ?>
 
 <!DOCTYPE html>
@@ -110,24 +140,8 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 </head>
 <body>
     <h2>Phytoplankton Prediction Results</h2>
-    <?php if (isset($results)): ?>
-        <?php if (isset($results['error_message'])): ?>
-            <p style="color: red;"><strong>Error:</strong> <?php echo $results['error_message']; ?></p>
-        <?php else: ?>
-            <?php foreach ($results['predictions'] as $station_name => $result): ?>
-                <h3>Results for <?php echo $station_name; ?></h3>
-                <p><strong>Predicted Phytoplankton Count (cells/ml):</strong> <?php echo $result['prediction'][0]; ?></p>
-                <p><strong>Status:</strong> <?php echo $results['status']; ?></p>
-                <div><strong>Forecast:</strong>
-                    <?php foreach ($result['forecast'] as $key => $value): ?>
-                        <p><strong><?php echo $key; ?>:</strong> <?php echo $value; ?></p>
-                    <?php endforeach; ?>
-                </div>
-            <?php endforeach; ?>
-        <?php endif; ?>
-    <?php else: ?>
-        <p>No prediction made yet. Please submit the form.</p>
-    <?php endif; ?>
+    
+    
 
     <h2>Enter New Data for Prediction</h2>
     <form action="" method="post">
