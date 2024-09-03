@@ -41,18 +41,43 @@ if (isset($weatherArray['daily'])) {
         $selectedDate = $_SESSION["date"];
     }
 
-    // Ensure the correct date is being used
-    echo "<p>Selected Date: {$selectedDate}</p>";
 
     // Find index for the selected date
     $index = array_search($selectedDate, $dates);
 
     if ($index !== false) {
+        echo "<div style='position: absolute; bottom: 200px; right: 50px; width: 550px; border: 1px solid green; padding: 10px; box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1);'>";
         // Display weather data for the selected date
-       
+        echo "<h2 style='color: black; text-align: center; font-size: 1.2em;'>Weather Forecast for {$selectedDate}</h2>";
+        echo "<table style='width: 100%; border-collapse: collapse;'>";
+        echo "<tr style='background-color: #e0f7e0;'>";
+        echo "<th style='border: 1px solid green; padding: 5px;'>Weather Code</th>";
+        echo "<th style='border: 1px solid green; padding: 5px;'>Max Temp (°C)</th>";
+        echo "<th style='border: 1px solid green; padding: 5px;'>Min Temp (°C)</th>";
+        echo "</tr>";
+        echo "<tr>";
+        echo "<td style='border: 1px solid green; padding: 5px;'>{$weatherCode[$index]}</td>";
+        echo "<td style='border: 1px solid green; padding: 5px;'>{$temperatureMax[$index]}</td>";
+        echo "<td style='border: 1px solid green; padding: 5px;'>{$temperatureMin[$index]}</td>";
+        echo "</tr>";
+        echo "<tr>";
+        echo "<th style='border: 1px solid green; padding: 5px;'>Max Humidity (%)</th>";
+        echo "<th style='border: 1px solid green; padding: 5px;'>Min Humidity (%)</th>";
+        echo "<th style='border: 1px solid green; padding: 5px;'>Max Wind (m/s)</th>";
+        echo "</tr>";
+        echo "<tr>";
+        echo "<td style='border: 1px solid green; padding: 5px;'>{$humidityMax[$index]}</td>";
+        echo "<td style='border: 1px solid green; padding: 5px;'>{$humidityMin[$index]}</td>";
+        echo "<td style='border: 1px solid green; padding: 5px;'>{$windSpeedMax[$index]}</td>";
+        echo "</tr>";
+        echo "</table>";
+        echo "</div>";
     } else {
-        echo "Data for the selected date is not available.";
+        echo "<div style='position: fixed; bottom: 20px; right: 20px; width: 300px; background-color: #fff0f0; border: 1px solid red; padding: 10px; box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1);'>";
+        echo "<p style='color: red; text-align: center;'>Data for the selected date is not available.</p>";
+        echo "</div>";
     }
+    
 } else {
     echo "Unable to fetch weather data.";
 }
@@ -109,7 +134,7 @@ if (isset($results)) {
         }
     }
 } else {
-    echo "No prediction made yet. Please submit the form.";
+    
 }
 
 
@@ -385,7 +410,7 @@ if (isset($results)) {
             <form method="get" action="status.php">
                 <label for="prediction-date">Choose a date:</label>
                 <input type="date" id="date" name="date"  min="<?php echo min($dates); ?>" max="<?php echo max($dates); ?>" value="<?php echo isset($_GET['date']) ? $_GET['date'] : date('Y-m-d', strtotime('+1 day')); ?>">
-                <input type="submit" value="Submit">
+                <input type="submit" value="Forecast">
             </form>
             <form action="status.php" method="post">
                 <input type="submit" value="Predict">
