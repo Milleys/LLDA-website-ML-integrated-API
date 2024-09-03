@@ -36,7 +36,7 @@ def predict_and_learn():
 
         # Load dataset for SARIMA
         merged_df = pd.read_csv(csv_file_path)
-        station_name = 'Stn.XVI (Sta Rosa)'  # Adjust the station name as necessary
+        station_name = 'Stn. IV (Central Bay)'  # Adjust the station name as necessary
         merged_df = merged_df[merged_df['Monitoring Stations'] == station_name]
         
         # Drop rows with missing values

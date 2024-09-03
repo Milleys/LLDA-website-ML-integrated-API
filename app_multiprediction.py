@@ -3,7 +3,6 @@ import pandas as pd
 import pickle
 import os
 from statsmodels.tsa.statespace.sarimax import SARIMAX
-import numpy as np
 import warnings
 
 app = Flask(__name__)
@@ -85,7 +84,7 @@ def predict_and_learn():
                 try:
                     model_fit = sarima_models[parameter]
                     forecast = model_fit.get_forecast(steps=forecast_steps).predicted_mean
-                    forecast_value = float(forecast.values[-1])  # Convert to Python float
+                    forecast_value = forecast.values[-1]  # Value for the target date
                     forecast_results[parameter] = forecast_value
                 except Exception as e:
                     return jsonify({'status': 'Error', 'message': f'Error in SARIMA for {parameter} at {station_name}: {e}'})
@@ -100,7 +99,7 @@ def predict_and_learn():
 
             # Make prediction using XGBoost model
             prediction = xgb_model.predict(combined_scaled)
-            combined_df['Phytoplankton (cells/ml)'] = [float(p) for p in prediction]  # Convert to Python float
+            combined_df['Phytoplankton (cells/ml)'] = prediction  # Append prediction to DataFrame
             
             # Format the date as 'MM/DD/YYYY'
             formatted_date = target_date.strftime('%m/%d/%Y')
@@ -128,8 +127,8 @@ def predict_and_learn():
             
             forecast_df_dict = forecast_df.to_dict(orient='records')[0]
             results[station_name] = {
-                'prediction': [float(p) for p in prediction],
-                'forecast': {k: float(v) for k, v in forecast_df_dict.items()}
+                'prediction': prediction.tolist(),
+                'forecast': forecast_df_dict
             }
         
         return jsonify({
