@@ -1,7 +1,8 @@
 <!-- C:\xampp\htdocs\my_website\predict.php -->
 <?php
-
-
+session_start();
+$_SESSION["date"];
+print_r($_SESSION);
 
 #weather API
 $latitude = "14.5243"; // Latitude for Taguig
@@ -33,11 +34,13 @@ if (isset($weatherArray['daily'])) {
     $weatherCode = $dailyData['weather_code'];
 
     // Default to show tomorrow's data
-    $selectedDate = date('Y-m-d', strtotime('+1 day')); // Default: Tomorrow
-
+    $selectedDate = date('Y-m-d'); // Default: Tomorrow
+    $_SESSION["date"] = $selectedDate;
     // Check if a date is provided via GET request
     if (isset($_GET['date']) && in_array($_GET['date'], $dates)) {
         $selectedDate = $_GET['date'];
+        $_SESSION["date"] = $selectedDate;
+
     }
 
     // Find index for the selected date
@@ -70,13 +73,15 @@ if (isset($weatherArray['daily'])) {
 
 
 
-#Flash API
+#Flask API
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     $data = [
         'Temperature' => [floatval($temperatureMax)],
         'Humidity' => [floatval($humidityMax)],
         'Wind Speed' => [floatval($windSpeedMax)],
+        'Date' =>  $_SESSION["date"],
     ];
+
 
     $json_data = json_encode($data);
 
@@ -92,11 +97,23 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 
     // Decode the JSON response from the Flask API
     $response = json_decode($result, true);
-    $prediction = $response['prediction'][0];
-    $status = $response['status'];
 
 
+    if ($response['status'] == 'Error') {
+        $error_message = $response['message'];
+    } else {
+    $prediction = $response['prediction'][0] ?? null;
+    $status = $response['status'] ?? 'No status available';
+    $forecast = $response['forecast'] ?? [];
+
+     // Convert forecast to a string for display
+     $forecastString = '';
+     foreach ($forecast as $key => $value) {
+         $forecastString .= "<p><strong>{$key}:</strong> {$value}</p>";
+     }
+    }
 }
+
 ?>
 
 <!DOCTYPE html>
@@ -106,9 +123,12 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 </head>
 <body>
     <h2>Phytoplankton Prediction Result</h2>
-    <?php if (isset($prediction)): ?>
+    <?php if (isset($error_message)): ?>
+        <p style="color: red;"><strong>Error:</strong> <?php echo $error_message; ?></p>
+    <?php elseif (isset($prediction)): ?>
         <p><strong>Predicted Phytoplankton Count (cells/ml):</strong> <?php echo $prediction; ?></p>
         <p><strong>Status:</strong> <?php echo $status; ?></p>
+        <div><strong>Forecast:</strong><?php echo $forecastString; ?></div>
     <?php else: ?>
         <p>No prediction made yet. Please submit the form.</p>
     <?php endif; ?>
