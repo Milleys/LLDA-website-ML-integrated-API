@@ -171,7 +171,8 @@ if (isset($_POST['submit_flask'])) {
         ?>
 
     </select>
-    <input type="submit" value="Retrain" name ="Retrain">
+    <input type="submit" value="Preview" name ="Retrain">
+    <input type="submit" value = "Train" name = "Train">
 </form>
 
 
@@ -192,9 +193,6 @@ if (isset($_POST['submit_flask'])) {
        
     </textarea>
 
-    <form class="train-form" action="" method="POST">
-        <input type="submit" value = "Train">
-    </form>
 
 </div>
 
