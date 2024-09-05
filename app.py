@@ -3,6 +3,11 @@ import pandas as pd
 import pickle
 import os
 from statsmodels.tsa.statespace.sarimax import SARIMAX
+from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import StandardScaler
+from sklearn.metrics import mean_squared_error, r2_score, mean_absolute_error
+from xgboost import XGBRegressor
+
 import numpy as np
 import warnings
 
@@ -139,6 +144,73 @@ def predict_and_learn():
 
     except Exception as e:
         return jsonify({'status': 'Error', 'message': str(e)}), 500
+
+
+@app.route('/model_testing', methods=['POST'])
+def model_testing():
+    data = request.get_json()
+    df = pd.DataFrame(data)
+
+    # Standardize the input
+    df_scaled = scaler.transform(df)
+
+    # Make prediction
+    prediction = xgb_model.predict(df_scaled)
+   
+    return jsonify({'status': 'Prediction made and saved successfully', 'prediction': prediction.tolist()})
+
+
+@app.route('/retrain_model', methods=['POST'])
+def retrain_model():
+    try:
+        # Get the dataset name from the request
+        data = request.get_json()
+        dataset_name = data.get('dataset')
+        
+        # Construct the full path to the dataset
+        dataset_path = os.path.join(app.root_path, dataset_name)
+        
+        # Check if the file exists
+        if not os.path.exists(dataset_path):
+            return jsonify({"error": f"Dataset file '{dataset_name}' not found."})
+        
+        # Load the dataset
+        merged_df = pd.read_csv(dataset_path)
+        merged_df = merged_df.dropna()
+    
+        # Select features and target
+        features = ['Temperature', 'Humidity', 'Wind Speed', 'pH (units)', 'Ammonia (mg/L)', 'Inorganic Phosphate (mg/L)', 'BOD (mg/l)', 'Total coliforms (MPN/100ml)']
+        target = 'Phytoplankton (cells/ml)'
+    
+        # Perform train/test split
+        X = merged_df[features]
+        y = merged_df[target]
+        X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+    
+        # Standardize the features
+        scaler = StandardScaler()
+        X_train_scaled = scaler.fit_transform(X_train)
+        X_test_scaled = scaler.transform(X_test)
+    
+        # Train XGBoost model
+        xgb_model = XGBRegressor()
+        xgb_model.fit(X_train_scaled, y_train)
+        y_pred_xgb = xgb_model.predict(X_test_scaled)
+    
+        # Calculate metrics
+        mse_xgb = mean_squared_error(y_test, y_pred_xgb)
+        mae_xgb = mean_absolute_error(y_test, y_pred_xgb)
+        r2_xgb = r2_score(y_test, y_pred_xgb)
+    
+        # Return the metrics to the PHP website
+        return jsonify({'mse': mse_xgb, 'mae': mae_xgb, 'r2': r2_xgb})
+    
+    except Exception as e:
+        return jsonify({"error": str(e)})   
+
+    
+
+
 
 if __name__ == '__main__':
     app.run(debug=True)
