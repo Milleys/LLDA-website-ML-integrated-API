@@ -208,7 +208,66 @@ def retrain_model():
     except Exception as e:
         return jsonify({"error": str(e)})   
 
+
+@app.route('/export_model', methods=['POST'])
+def export_model():
+    try:
+        # Get the dataset name from the request
+        data = request.get_json()
+        dataset_name = data.get('dataset')
+        
+        # Construct the full path to the dataset
+        dataset_path = os.path.join(app.root_path, dataset_name)
+        
+        # Check if the file exists
+        if not os.path.exists(dataset_path):
+            return jsonify({"error": f"Dataset file '{dataset_name}' not found."})
+        
+        # Load the dataset
+        merged_df = pd.read_csv(dataset_path)
+        merged_df = merged_df.dropna()
     
+        # Select features and target
+        features = ['Temperature', 'Humidity', 'Wind Speed', 'pH (units)', 'Ammonia (mg/L)', 'Inorganic Phosphate (mg/L)', 'BOD (mg/l)', 'Total coliforms (MPN/100ml)']
+        target = 'Phytoplankton (cells/ml)'
+    
+        # Perform train/test split
+        X = merged_df[features]
+        y = merged_df[target]
+        X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+    
+        # Standardize the features
+        scaler = StandardScaler()
+        X_train_scaled = scaler.fit_transform(X_train)
+        X_test_scaled = scaler.transform(X_test)
+    
+        # Train XGBoost model
+        xgb_model = XGBRegressor()
+        xgb_model.fit(X_train_scaled, y_train)
+        y_pred_xgb = xgb_model.predict(X_test_scaled)
+    
+        # Calculate metrics
+        mse_xgb = mean_squared_error(y_test, y_pred_xgb)
+        mae_xgb = mean_absolute_error(y_test, y_pred_xgb)
+        r2_xgb = r2_score(y_test, y_pred_xgb)
+        # Save the trained model to a file using pickle
+        with open('xgb_model2.pkl', 'wb') as file:
+            pickle.dump(xgb_model, file)
+        
+        print("Model saved to 'xgb_model2.pkl'")
+
+        with open('xgb_model2.pkl', 'rb') as file:
+            loaded_svr_model = pickle.load(file)
+
+        with open('xgb_scaler2.pkl', 'wb') as file:
+            pickle.dump(scaler, file)
+    
+        # Return the metrics to the PHP website
+        return jsonify({'update': 'Model Export Success'})
+    
+    except Exception as e:
+        return jsonify({"error": str(e)}) 
+        
 
 
 
